@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install packages
-        run: pip install requests
+        run: run: pip install requests beautifulsoup4
 
       - name: Run Bot
         env:
