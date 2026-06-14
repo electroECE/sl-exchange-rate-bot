@@ -1,0 +1,26 @@
+name: Sri Lanka Exchange Bot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download code
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install packages
+        run: pip install requests
+
+      - name: Run Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python bot.py
