@@ -33,6 +33,17 @@ def get_union():
         "CNY": find_rate(text, [r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"]),
     }
 
+def get_panasia():
+    text = get_text("https://www.pabcbank.com/treasury/exchange-rate/")
+    return {
+        "USD": find_rate(text, [r"US Dollar\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
+        "CNY": find_rate(text, [
+            r"Chinese Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
+            r"Renminbi\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
+            r"Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
+        ]),
+    }
+
 def safe(fn):
     try:
         return fn()
