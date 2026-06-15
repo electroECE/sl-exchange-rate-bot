@@ -35,13 +35,14 @@ def get_union():
 
 def get_panasia():
     text = get_text("https://www.pabcbank.com/treasury/exchange-rate/")
+
+    print("===== PAN ASIA DATA START =====")
+    print(text[:5000])
+    print("===== PAN ASIA DATA END =====")
+
     return {
-        "USD": find_rate(text, [r"US Dollar\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [
-            r"Chinese Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
-            r"Renminbi\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
-            r"Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
-        ]),
+        "USD": {"buy": "TEST", "sell": "TEST"},
+        "CNY": {"buy": "TEST", "sell": "TEST"},
     }
 
 def safe(fn):
