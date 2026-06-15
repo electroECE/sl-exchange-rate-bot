@@ -13,35 +13,48 @@ def get_text(url):
     return soup.get_text(" ", strip=True)
 
 def find_rate(text, patterns):
-    for p in patterns:
-        m = re.search(p, text, re.I)
+    for pattern in patterns:
+        m = re.search(pattern, text, re.I)
         if m:
             return {"buy": m.group(1), "sell": m.group(2)}
     return {"buy": "N/A", "sell": "N/A"}
 
+def get_cbsl():
+    text = get_text("https://www.cbsl.gov.lk/en/rates-and-indicators/exchange-rates")
+    return {
+        "USD": find_rate(text, [
+            r"US Dollar.*?([\d.]+)\s+([\d.]+)",
+            r"USD.*?([\d.]+)\s+([\d.]+)"
+        ]),
+        "CNY": find_rate(text, [
+            r"Chinese Yuan.*?([\d.]+)\s+([\d.]+)",
+            r"Renminbi.*?([\d.]+)\s+([\d.]+)",
+            r"CNY.*?([\d.]+)\s+([\d.]+)"
+        ])
+    }
+
 def get_boc():
     text = get_text("https://www.boc.lk/rates-tariff")
     return {
-        "USD": find_rate(text, [r"USD\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [r"CNY\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
+        "USD": find_rate(text, [
+            r"USD.*?([\d.]{5,})\s+([\d.]{5,})",
+            r"US Dollar.*?([\d.]{5,})\s+([\d.]{5,})"
+        ]),
+        "CNY": find_rate(text, [
+            r"CNY.*?([\d.]{2,})\s+([\d.]{2,})",
+            r"Chinese Yuan.*?([\d.]{2,})\s+([\d.]{2,})"
+        ])
     }
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
     return {
-        "USD": find_rate(text, [r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"]),
-    }
-
-def get_panasia():
-    text = get_text("https://www.pabcbank.com/treasury/exchange-rate/")
-    return {
-        "USD": find_rate(text, [r"US Dollar\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [
-            r"Chinese Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
-            r"Renminbi\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
-            r"Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
+        "USD": find_rate(text, [
+            r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"
         ]),
+        "CNY": find_rate(text, [
+            r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"
+        ])
     }
 
 def safe(fn):
@@ -55,12 +68,16 @@ def safe(fn):
 
 def send_message(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": msg}, timeout=30).raise_for_status()
+    requests.post(
+        url,
+        data={"chat_id": CHAT_ID, "text": msg},
+        timeout=30
+    ).raise_for_status()
 
 def main():
     rates = {
+        "CBSL Average": safe(get_cbsl),
         "BOC": safe(get_boc),
-        "Pan Asia Bank": safe(get_panasia),
         "Union Bank": safe(get_union),
     }
 
@@ -80,7 +97,7 @@ def main():
         msg += f"🏦 {bank}: Buy {data['CNY']['buy']} | Sell {data['CNY']['sell']}\n"
 
     msg += f"\n🕒 Updated: {now}"
-    msg += "\n\nRates are indicative. Confirm with bank before transactions."
+    msg += "\n\nRates are indicative. Confirm with bank before transactions Vignes."
 
     send_message(msg)
 
