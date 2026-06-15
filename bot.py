@@ -80,7 +80,7 @@ def main():
         msg += f"🏦 {bank}: Buy {data['CNY']['buy']} | Sell {data['CNY']['sell']}\n"
 
     msg += f"\n🕒 Updated: {now}"
-    msg += "\n\nRates are indicative. Confirm with bank before transactions."
+    msg += "\n\nRates are indicative. Confirm with bank before transactions.Vignes"
 
     send_message(msg)
 
