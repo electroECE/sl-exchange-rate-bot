@@ -12,30 +12,25 @@ def get_text(url):
     soup = BeautifulSoup(r.text, "html.parser")
     return soup.get_text(" ", strip=True)
 
-def find_rate(text, pattern):
-    m = re.search(pattern, text, re.I)
-    if m:
-        return {"buy": m.group(1), "sell": m.group(2)}
+def find_rate(text, patterns):
+    for p in patterns:
+        m = re.search(p, text, re.I)
+        if m:
+            return {"buy": m.group(1), "sell": m.group(2)}
     return {"buy": "N/A", "sell": "N/A"}
 
 def get_boc():
     text = get_text("https://www.boc.lk/rates-tariff")
     return {
-        "USD": find_rate(text, r"USD.*?([\d.]{5,})\s+([\d.]{5,})"),
-        "CNY": find_rate(text, r"CNY.*?([\d.]{2,})\s+([\d.]{2,})"),
+        "USD": find_rate(text, [r"USD\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
+        "CNY": find_rate(text, [r"CNY\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
     }
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
     return {
-        "USD": find_rate(text, r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"),
-        "CNY": find_rate(text, r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"),
-    }
-
-def get_panasia():
-    return {
-        "USD": {"buy": "Manual", "sell": "Manual"},
-        "CNY": {"buy": "Manual", "sell": "Manual"},
+        "USD": find_rate(text, [r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"]),
+        "CNY": find_rate(text, [r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"]),
     }
 
 def safe(fn):
