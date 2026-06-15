@@ -12,37 +12,30 @@ def get_text(url):
     soup = BeautifulSoup(r.text, "html.parser")
     return soup.get_text(" ", strip=True)
 
-def find_rate(text, patterns):
-    for p in patterns:
-        m = re.search(p, text, re.I)
-        if m:
-            return {"buy": m.group(1), "sell": m.group(2)}
+def find_rate(text, pattern):
+    m = re.search(pattern, text, re.I)
+    if m:
+        return {"buy": m.group(1), "sell": m.group(2)}
     return {"buy": "N/A", "sell": "N/A"}
 
 def get_boc():
     text = get_text("https://www.boc.lk/rates-tariff")
     return {
-        "USD": find_rate(text, [r"USD\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [r"CNY\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"]),
+        "USD": find_rate(text, r"USD.*?([\d.]{5,})\s+([\d.]{5,})"),
+        "CNY": find_rate(text, r"CNY.*?([\d.]{2,})\s+([\d.]{2,})"),
     }
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
     return {
-        "USD": find_rate(text, [r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"]),
-        "CNY": find_rate(text, [r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"]),
+        "USD": find_rate(text, r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"),
+        "CNY": find_rate(text, r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"),
     }
 
 def get_panasia():
-    text = get_text("https://www.pabcbank.com/treasury/exchange-rate/")
-
-    print("===== PAN ASIA DATA START =====")
-    print(text[:5000])
-    print("===== PAN ASIA DATA END =====")
-
     return {
-        "USD": {"buy": "TEST", "sell": "TEST"},
-        "CNY": {"buy": "TEST", "sell": "TEST"},
+        "USD": {"buy": "Manual", "sell": "Manual"},
+        "CNY": {"buy": "Manual", "sell": "Manual"},
     }
 
 def safe(fn):
@@ -81,7 +74,7 @@ def main():
         msg += f"🏦 {bank}: Buy {data['CNY']['buy']} | Sell {data['CNY']['sell']}\n"
 
     msg += f"\n🕒 Updated: {now}"
-    msg += "\n\nRates are indicative. Confirm with bank before transactions.Vignes"
+    msg += "\n\nRates are indicative. Confirm with bank before transactions."
 
     send_message(msg)
 
