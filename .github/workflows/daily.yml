@@ -3,14 +3,14 @@ name: Sri Lanka Exchange Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: '30 4 * * *'
 
 jobs:
   send-message:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -18,10 +18,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install packages
-        run: pip install requests beautifulsoup4
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
 
-      - name: Run Telegram Bot
+      - name: Run Telegram Exchange Bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
