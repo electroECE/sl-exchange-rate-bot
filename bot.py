@@ -1,4 +1,6 @@
-import os, re, requests
+import os
+import re
+import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -6,65 +8,49 @@ from zoneinfo import ZoneInfo
 BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
 def get_text(url):
-    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30)
+    r = requests.get(url, headers=HEADERS, timeout=30)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
     return soup.get_text(" ", strip=True)
 
-def find_rate(text, patterns):
-    for pattern in patterns:
-        m = re.search(pattern, text, re.I)
-        if m:
-            return {"buy": m.group(1), "sell": m.group(2)}
-    return {"buy": "N/A", "sell": "N/A"}
 
-def get_cbsl():
-    text = get_text("https://www.cbsl.gov.lk/en/rates-and-indicators/exchange-rates")
+def empty_rates():
     return {
-        "USD": find_rate(text, [
-            r"US Dollar.*?([\d.]+)\s+([\d.]+)",
-            r"USD.*?([\d.]+)\s+([\d.]+)"
-        ]),
-        "CNY": find_rate(text, [
-            r"Chinese Yuan.*?([\d.]+)\s+([\d.]+)",
-            r"Renminbi.*?([\d.]+)\s+([\d.]+)",
-            r"CNY.*?([\d.]+)\s+([\d.]+)"
-        ])
+        "USD": {"buy": "N/A", "sell": "N/A"},
+        "CNY": {"buy": "N/A", "sell": "N/A"},
     }
 
-def get_boc():
-    text = get_text("https://www.boc.lk/rates-tariff")
-    return {
-        "USD": find_rate(text, [
-            r"USD.*?([\d.]{5,})\s+([\d.]{5,})",
-            r"US Dollar.*?([\d.]{5,})\s+([\d.]{5,})"
-        ]),
-        "CNY": find_rate(text, [
-            r"CNY.*?([\d.]{2,})\s+([\d.]{2,})",
-            r"Chinese Yuan.*?([\d.]{2,})\s+([\d.]{2,})"
-        ])
-    }
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
+
+    usd = re.search(r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)", text, re.I)
+    cny = re.search(r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)", text, re.I)
+
     return {
-        "USD": find_rate(text, [
-            r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"
-        ]),
-        "CNY": find_rate(text, [
-            r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"
-        ])
+        "USD": {
+            "buy": usd.group(1) if usd else "N/A",
+            "sell": usd.group(2) if usd else "N/A",
+        },
+        "CNY": {
+            "buy": cny.group(1) if cny else "N/A",
+            "sell": cny.group(2) if cny else "N/A",
+        },
     }
 
-def safe(fn):
+
+def safe(func):
     try:
-        return fn()
+        return func()
     except Exception:
-        return {
-            "USD": {"buy": "N/A", "sell": "N/A"},
-            "CNY": {"buy": "N/A", "sell": "N/A"},
-        }
+        return empty_rates()
+
 
 def send_message(msg):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -74,10 +60,11 @@ def send_message(msg):
         timeout=30
     ).raise_for_status()
 
+
 def main():
     rates = {
-        "CBSL Average": safe(get_cbsl),
-        "BOC": safe(get_boc),
+        "CBSL Average": empty_rates(),
+        "BOC": empty_rates(),
         "Union Bank": safe(get_union),
     }
 
@@ -96,10 +83,13 @@ def main():
     for bank, data in rates.items():
         msg += f"🏦 {bank}: Buy {data['CNY']['buy']} | Sell {data['CNY']['sell']}\n"
 
+    msg += f"\n🕘 Auto time: 9:30 AM Sri Lanka"
     msg += f"\n🕒 Updated: {now}"
-    msg += "\n\nRates are indicative. Confirm with bank before transactions Vignes."
+    msg += "\n\nBOC/CBSL show N/A until their reliable data source is fixed."
+    msg += "\nRates are indicative. Confirm with bank before transactions."
 
     send_message(msg)
+
 
 if __name__ == "__main__":
     main()
