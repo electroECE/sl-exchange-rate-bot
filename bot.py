@@ -15,33 +15,65 @@ def get_text(url):
     r = requests.get(url, headers=HEADERS, timeout=30)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "html.parser")
+
     for tag in soup(["script", "style"]):
         tag.decompose()
+
     return soup.get_text(" ", strip=True)
 
 
-def empty_rates():
+def empty():
     return {
         "USD": {"buy": "N/A", "sell": "N/A"},
         "CNY": {"buy": "N/A", "sell": "N/A"},
     }
 
 
+def find_after(text, patterns):
+    for pattern in patterns:
+        m = re.search(pattern, text, re.I)
+        if m:
+            return {"buy": m.group(1), "sell": m.group(2)}
+    return {"buy": "N/A", "sell": "N/A"}
+
+
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
 
-    usd = re.search(r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)", text, re.I)
-    cny = re.search(r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)", text, re.I)
+    return {
+        "USD": find_after(text, [
+            r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"
+        ]),
+        "CNY": find_after(text, [
+            r"YUAN RENMINBI\s+CNY\s+([\d.]+)\s+([\d.]+)"
+        ]),
+    }
+
+
+def get_peoples():
+    text = get_text("https://www.peoplesbank.lk/exchange-rates/")
 
     return {
-        "USD": {
-            "buy": usd.group(1) if usd else "N/A",
-            "sell": usd.group(2) if usd else "N/A",
-        },
-        "CNY": {
-            "buy": cny.group(1) if cny else "N/A",
-            "sell": cny.group(2) if cny else "N/A",
-        },
+        "USD": find_after(text, [
+            r"US Dollars\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
+        ]),
+        "CNY": find_after(text, [
+            r"Chinese Yuan\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)",
+            r"CNY\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
+        ]),
+    }
+
+
+def get_dfcc():
+    text = get_text("https://www.dfcc.lk/rates-and-tariff/exchange-rates")
+
+    return {
+        "USD": find_after(text, [
+            r"USD\s+([\d.]+)\s+[\d.]+\s+([\d.]+)"
+        ]),
+        "CNY": find_after(text, [
+            r"CNY\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
+        ]),
     }
 
 
@@ -49,27 +81,27 @@ def safe(func):
     try:
         return func()
     except Exception:
-        return empty_rates()
+        return empty()
 
 
-def send_message(msg):
+def send_message(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     requests.post(
         url,
-        data={"chat_id": CHAT_ID, "text": msg},
-        timeout=30
+        data={"chat_id": CHAT_ID, "text": message},
+        timeout=30,
     ).raise_for_status()
 
 
 def main():
     rates = {
-        "CBSL Average": empty_rates(),
-        "BOC": empty_rates(),
         "Union Bank": safe(get_union),
+        "People's Bank": safe(get_peoples),
+        "DFCC Bank": safe(get_dfcc),
     }
 
-    now = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y %I:%M %p")
     today = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y")
+    now = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y %I:%M %p")
 
     msg = "🇱🇰 Sri Lanka Daily Exchange Rates\n"
     msg += f"📅 Rate Date: {today}\n"
@@ -83,10 +115,9 @@ def main():
     for bank, data in rates.items():
         msg += f"🏦 {bank}: Buy {data['CNY']['buy']} | Sell {data['CNY']['sell']}\n"
 
-    msg += f"\n🕘 Auto time: 9:30 AM Sri Lanka"
+    msg += "\n\n⏰ Auto time: 9:30 AM Sri Lanka"
     msg += f"\n🕒 Updated: {now}"
-    msg += "\n\nBOC/CBSL show N/A until their reliable data source is fixed."
-    msg += "\nRates are indicative. Confirm with bank before transactions."
+    msg += "\n\nRates are indicative. Confirm with bank before transactions."
 
     send_message(msg)
 
