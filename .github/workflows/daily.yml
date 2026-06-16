@@ -3,7 +3,7 @@ name: Sri Lanka Exchange Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 4 * * *'
+    - cron: "*/5 * * * *"
 
 jobs:
   send-message:
