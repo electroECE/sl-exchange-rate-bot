@@ -3,7 +3,11 @@ name: Sri Lanka Exchange Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 4 * * *" # 9:30 AM Sri Lanka time
+
+concurrency:
+  group: exchange-bot
+  cancel-in-progress: true
 
 jobs:
   send-message:
