@@ -39,6 +39,7 @@ def find_after(text, patterns):
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
+
     return {
         "USD": find_after(text, [
             r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"
@@ -51,6 +52,7 @@ def get_union():
 
 def get_peoples():
     text = get_text("https://www.peoplesbank.lk/exchange-rates/")
+
     return {
         "USD": find_after(text, [
             r"US Dollars\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
@@ -62,8 +64,10 @@ def get_peoples():
     }
 
 
+
 def get_dfcc():
     text = get_text("https://www.dfcc.lk/rates-and-tariff/exchange-rates")
+
     return {
         "USD": find_after(text, [
             r"USD\s+([\d.]+)\s+[\d.]+\s+([\d.]+)"
@@ -73,35 +77,31 @@ def get_dfcc():
         ]),
     }
 
-
 def get_panasia():
-    text = ("https://www.pabcbank.com/treasury/exchange-rate")
-return {
+    text = get_text("https://www.pabcbank.com/treasury/exchange-rate")
+
+    return {
         "USD": find_after(text, [
             r"USD\s+([\d.]+)\s+[\d.]+\s+([\d.]+)"
         ]),
         "CNY": find_after(text, [
             r"CNY\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
-    
+        ]),
     }
-
-
 def safe(func):
     try:
         return func()
-    except Exception as e:
-        print(f"Error in {func.__name__}: {e}")
+    except Exception:
         return empty()
 
 
 def send_message(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    response = requests.post(
+    requests.post(
         url,
         data={"chat_id": CHAT_ID, "text": message},
         timeout=30,
-    )
-    response.raise_for_status()
+    ).raise_for_status()
 
 
 def main():
@@ -112,9 +112,8 @@ def main():
         "Pan Asia Bank": safe(get_panasia),
     }
 
-    colombo_time = datetime.now(ZoneInfo("Asia/Colombo"))
-    today = colombo_time.strftime("%d-%m-%Y")
-    now = colombo_time.strftime("%d-%m-%Y %I:%M %p")
+    today = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y")
+    now = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y %I:%M %p")
 
     msg = "🇱🇰 Sri Lanka Daily Exchange Rates\n"
     msg += f"📅 Rate Date: {today}\n"
