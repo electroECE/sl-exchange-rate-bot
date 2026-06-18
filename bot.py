@@ -75,31 +75,14 @@ def get_dfcc():
 
 
 def get_panasia():
-    text = ""
-
-    urls = [
-        "https://www.pabcbank.com/",
-        "https://www.pabcbank.com/rates-tariffs/",
-        "https://www.pabcbank.com/exchange-rates/",
-    ]
-
-    for url in urls:
-        try:
-            text += " " + get_text(url)
-        except Exception as e:
-            print(f"Pan Asia URL failed: {url} | {e}")
-
-    return {
+    text = ("https://www.pabcbank.com/treasury/exchange-rate")
+return {
         "USD": find_after(text, [
-            r"US Dollar\s+USD\s+([\d.]+)\s+([\d.]+)",
-            r"United States Dollar\s+([\d.]+)\s+([\d.]+)",
-            r"USD\s+([\d.]+)\s+([\d.]+)"
+            r"USD\s+([\d.]+)\s+[\d.]+\s+([\d.]+)"
         ]),
         "CNY": find_after(text, [
-            r"Chinese Yuan\s+CNY\s+([\d.]+)\s+([\d.]+)",
-            r"Yuan Renminbi\s+CNY\s+([\d.]+)\s+([\d.]+)",
-            r"CNY\s+([\d.]+)\s+([\d.]+)"
-        ]),
+            r"CNY\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
+    
     }
 
 
