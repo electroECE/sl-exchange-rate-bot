@@ -39,7 +39,6 @@ def find_after(text, patterns):
 
 def get_union():
     text = get_text("https://www.unionb.com/exchange-rates/")
-
     return {
         "USD": find_after(text, [
             r"US DOLLAR\s+USD\s+([\d.]+)\s+([\d.]+)"
@@ -52,7 +51,6 @@ def get_union():
 
 def get_peoples():
     text = get_text("https://www.peoplesbank.lk/exchange-rates/")
-
     return {
         "USD": find_after(text, [
             r"US Dollars\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"
@@ -66,7 +64,6 @@ def get_peoples():
 
 def get_dfcc():
     text = get_text("https://www.dfcc.lk/rates-and-tariff/exchange-rates")
-
     return {
         "USD": find_after(text, [
             r"USD\s+([\d.]+)\s+[\d.]+\s+([\d.]+)"
@@ -77,20 +74,51 @@ def get_dfcc():
     }
 
 
+def get_panasia():
+    text = ""
+
+    urls = [
+        "https://www.pabcbank.com/",
+        "https://www.pabcbank.com/rates-tariffs/",
+        "https://www.pabcbank.com/exchange-rates/",
+    ]
+
+    for url in urls:
+        try:
+            text += " " + get_text(url)
+        except Exception as e:
+            print(f"Pan Asia URL failed: {url} | {e}")
+
+    return {
+        "USD": find_after(text, [
+            r"US Dollar\s+USD\s+([\d.]+)\s+([\d.]+)",
+            r"United States Dollar\s+([\d.]+)\s+([\d.]+)",
+            r"USD\s+([\d.]+)\s+([\d.]+)"
+        ]),
+        "CNY": find_after(text, [
+            r"Chinese Yuan\s+CNY\s+([\d.]+)\s+([\d.]+)",
+            r"Yuan Renminbi\s+CNY\s+([\d.]+)\s+([\d.]+)",
+            r"CNY\s+([\d.]+)\s+([\d.]+)"
+        ]),
+    }
+
+
 def safe(func):
     try:
         return func()
-    except Exception:
+    except Exception as e:
+        print(f"Error in {func.__name__}: {e}")
         return empty()
 
 
 def send_message(message):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(
+    response = requests.post(
         url,
         data={"chat_id": CHAT_ID, "text": message},
         timeout=30,
-    ).raise_for_status()
+    )
+    response.raise_for_status()
 
 
 def main():
@@ -98,10 +126,12 @@ def main():
         "Union Bank": safe(get_union),
         "People's Bank": safe(get_peoples),
         "DFCC Bank": safe(get_dfcc),
+        "Pan Asia Bank": safe(get_panasia),
     }
 
-    today = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y")
-    now = datetime.now(ZoneInfo("Asia/Colombo")).strftime("%d-%m-%Y %I:%M %p")
+    colombo_time = datetime.now(ZoneInfo("Asia/Colombo"))
+    today = colombo_time.strftime("%d-%m-%Y")
+    now = colombo_time.strftime("%d-%m-%Y %I:%M %p")
 
     msg = "🇱🇰 Sri Lanka Daily Exchange Rates\n"
     msg += f"📅 Rate Date: {today}\n"
