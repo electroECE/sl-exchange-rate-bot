@@ -3,7 +3,10 @@ name: Sri Lanka Exchange Bot
 on:
   workflow_dispatch:
   schedule:
-  - cron: '*/5 * * * *'
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
 
 concurrency:
   group: exchange-bot
@@ -32,3 +35,11 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python bot.py
+
+      - name: Save rate file
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add rate.json
+          git commit -m "update rate" || echo "No changes"
+          git push
